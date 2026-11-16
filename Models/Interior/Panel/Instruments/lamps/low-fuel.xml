@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+
+  <path>lamp.ac</path>
+
+  <animation>
+    <object-name>lampoff</object-name>
+    <object-name>lampon</object-name>
+  </animation>
+
+  <animation>
+    <type>select</type>
+    <object-name>lampon</object-name>
+    <condition>
+        <less-than>
+           <property>/consumables/fuel/total-fuel-lbs</property>
+           <value>6</value>
+        </less-than>
+    </condition>
+  </animation>
+
+  <animation>
+    <type>material</type>
+    <object-name>lampoff</object-name>
+    <emission>
+      <red>   0 </red>
+      <green> 0 </green>
+      <blue>  0 </blue>
+    </emission>
+  </animation>
+
+  <animation>
+    <type>material</type>
+    <object-name>lampon</object-name>
+    <emission>
+      <red>   1 </red>
+      <green> 1 </green>
+      <blue>  1 </blue>
+    </emission>
+  </animation>
+  
+   <!-- Compositor lights-->
+  
+  <light>
+  <name>lampon</name>
+  <type>spot</type>
+  <position>
+    <x-m>0.025</x-m>
+    <y-m>0.0</y-m>
+    <z-m>0</z-m>
+  </position>
+  <direction>
+    <x>-1.0</x>
+    <y>0</y>
+    <z>0</z>
+  </direction>
+  <ambient>
+    <r>0</r>
+    <g>0</g>
+    <b>1</b>
+    <a>1</a>
+  </ambient>
+  <diffuse>
+    <r>0</r>
+    <g>1</g>
+    <b>0</b>
+    <a>1</a>
+  </diffuse>
+  <specular>
+    <r>0</r>
+    <g>1</g>
+    <b>0</b>
+    <a>1</a>
+  </specular>
+    <color>
+      <r>1</r>
+      <g>0.2</g>
+      <b>0.2</b>
+      <a>1.0</a>
+    </color>
+ <attenuation>
+    <c>1</c>
+    <l>1.5</l>
+    <q>3.5</q>
+  </attenuation>
+  <spot-exponent>1</spot-exponent>
+  <spot-cutoff>35</spot-cutoff>
+  <range-m>0.05</range-m>
+   <intensity>0.02</intensity>
+  <dim-factor>
+    <property>systems/electrical/outputs/instrument-lights</property>
+  </dim-factor>
+ 
+</light>
+
+
+<animation>
+  <type>select</type>
+  <object-name>lampon</object-name>
+		
+  <condition>
+  
+   <equals>
+    <property>controls/electric/directbat-switch</property>
+    <value>1</value>
+   </equals>
+  
+  </condition>
+ </animation>
+
+</PropertyList>
+

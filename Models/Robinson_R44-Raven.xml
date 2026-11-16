@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+<model>
+
+	<name>Shiny</name>
+		<path>Aircraft/R44/Models/mainHDR.xml</path>
+</model>
+
+<animation>
+	<type>select</type>
+	<object-name>Shiny</object-name>
+	<condition>
+	 <property>sim/model/r44/hdr</property> 
+	
+	
+	</condition>
+</animation>
+
+
+<model>
+
+	<name>NonShiny</name>
+		<path>Aircraft/R44/Models/mainALS.xml</path>
+</model>
+
+<animation>
+	<type>select</type>
+	<object-name>NonShiny</object-name>
+	<condition>
+	<property>sim/model/r44/als</property>
+	
+	</condition>
+</animation>
+  <nasal>
+    <load>
+    
+      var livery_update = aircraft.livery_update.new("Aircraft/R44/Models/Liveries", 10);
+
+      var self = cmdarg();
+
+      var float_0 = self.getNode("sim/multiplay/generic/float[0]", 1);
+      var float_1 = self.getNode("sim/multiplay/generic/float[1]", 1);
+
+      var crew_door = self.getNode("instrumentation/doors/crew/position-norm", 1);
+      var passenger_door = self.getNode("instrumentation/doors/passenger/position-norm", 1);
+
+      crew_door.alias(float_0);
+      passenger_door.alias(float_1);
+   <![CDATA[
+var root = cmdarg();
+var rootindex = root.getIndex();
+var mpPath = "/ai/models/multiplayer["~ rootindex ~"]/";
+
+var lightsPath = mpPath~"lightpack/"; #path to the property node, where all internal values are placed
+
+props.globals.initNode(mpPath~"sim/is-MP-Aircraft", 1, "BOOL");
+      
+srand();
+#wherever you want to add randomization of time, use something like:  + rand()*0.05-0.025 (included by default where appropriate)
+
+
+#list of switches for lights - if you don't intend to use some light, assign it nil value instead, like whateverSwitch = nil; and you don't need to care about anything else
+#IMPORTANT: don't put / on the start of the string, it's already included in the mpPath property
+var navSwitch = mpPath~"controls/lighting/nav-lights-switch";
+var beaconSwitch = mpPath~"controls/lighting/beacon-switch";
+var strobeSwitch = mpPath~"controls/lighting/strobe-switch";
+var landingSwitch = mpPath~"controls/lighting/landing-lights-switch";
+var taxiSwitch = mpPath~"controls/lighting/taxi-light-switch";
+var probeSwitch = mpPath~"controls/lighting/probe-light-switch";
+var whiteSwitch = mpPath~"controls/lighting/white-light-switch";
+var searchSwitch = mpPath~"controls/lighting/search-light-switch";
+#switch this from 1 to 0 if you want to use advanced cyclical fading animation of the the nav lights instead of being stable on when the switch is on
+navStillOn = 1;
+
+
+#I need to set listener on some MP transferred properties; this doesn't seem to work well sometimes, so I mirror them to the original location on any change
+#This also simplifies work as I can use almost the same code for MP as is the local Nasal. Furthermore, I can use meaningful property names in the model XML files instead of referencing the MP properties. 
+var mpVar = {
+	new: func(propIn, propOut) {
+		var m = { parents: [mpVar] };
+		m.propIn = propIn;
+		m.propOut = propOut;
+		if(propIn==nil or propOut==nil) return m;
+		m.value = getprop(propIn);
+		setprop(propOut, m.value);
+		return m;
+	},
+	check: func {
+		if(me.propIn==nil or me.propOut==nil) return;
+		var newValue = getprop(me.propIn);
+		if(newValue != me.value) {
+			setprop(me.propOut, newValue);
+			me.value = newValue;
+			#print("value of "~me.propOut~" changed: "~newValue);
+		}
+	},
+};
+#init any property copy object needed in this array (anything you need to transfer over MP, but you are using the original paths in your xmls)
+#also used for properties you are using a listener on, or properties which you maybe want to manipulate during the <unload> 
+#if you're just using the pack, change the values according to the MP bindings in the -set.xml file
+#you don't need to delete the entries if the path is nil - it gets skipped automatically and the MP path is just ignored
+var mirrorValues = [
+	mpVar.new(mpPath~"sim/multiplay/generic/int[7]", mpPath~"sim/crashed"),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[0]", navSwitch),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[1]", beaconSwitch),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[1]", strobeSwitch),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[2]", landingSwitch),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[3]", taxiSwitch),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[3]", probeSwitch),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[0]", whiteSwitch),
+	mpVar.new(mpPath~"sim/multiplay/generic/int[8]", searchSwitch),
+];
+#loop at the default MP transfer frequency (10Hz)
+var mirrorTimer = maketimer(0.1, func {
+	foreach(var mir; mirrorValues) {
+		mir.check();
+	}
+});
+mirrorTimer.start();
+
+
+
+#### NAV LIGHTS ####
+
+#class for a periodic fade in/out animation - for flashing, use rather standard aircraft.light.new(), as in Beacon and Strobe section
+var lightCycle = {
+	#constructor
+	new: func(propSwitch, propOut) {
+		m = { parents: [lightCycle] };
+		props.globals.initNode(propOut, 0, "DOUBLE");
+		props.globals.initNode(propSwitch, 1, "BOOL");
+		m.fadeIn = 0.4 + rand()*0.05-0.025; #fade in time
+		m.fadeOut = 0.4 + rand()*0.05-0.025; #fade out time
+		m.stayOn = 1.5 + rand()*0.05-0.025; #stable on period
+		m.stayOff = 1 + rand()*0.05-0.025; #stable off period
+		m.turnOff = 0.12; #fade out time when turned off
+		m.phase = 0; #phase to be run on next timer call: 0 -> fade in, 1 -> stay on, 2 -> fade out, 3 -> stay off
+		m.cycleTimer = maketimer(0.1, func {
+			if(getprop(propSwitch)) {
+				if(m.phase == 0) {
+					interpolate(propOut, 1, m.fadeIn);
+					m.phase = 1;
+					m.cycleTimer.restart(m.fadeIn);
+				}
+				else if(m.phase == 1){
+					m.phase = 2;
+					m.cycleTimer.restart(m.stayOn);
+				}
+				else if(m.phase == 2){
+					interpolate(propOut, 0, m.fadeOut);
+					m.phase = 3;
+					m.cycleTimer.restart(m.fadeOut);
+				}
+				else if(m.phase == 3){
+					m.phase = 0;
+					m.cycleTimer.restart(m.stayOff);
+				}
+			}
+			else {
+				interpolate(propOut, 0, m.turnOff); #kills any currently ongoing interpolation
+				m.phase = 0;
+			}
+		});
+		m.cycleTimer.singleShot = 1;
+		if(propSwitch==nil) {
+			m.listen = nil;
+			return m;
+		}
+		m.listen = setlistener(propSwitch, func{m.cycleTimer.restart(0);}); #handle switch changes
+		m.cycleTimer.restart(0); #start the looping
+		return m;
+	},
+	#destructor
+	del: func {
+		if(me.listen!=nil) removelistener(me.listen);
+		me.cycleTimer.stop();
+	},
+};
+
+#By default, the switch property is initialized to 1 (only if no value is already assigned). Don't change the class implementation! To override this, set the property manually. You don't need to care if any other code already does it for you. 
+var navLights = nil;
+if(!navStillOn) {
+	navLights = lightCycle.new(navSwitch, lightsPath~"nav-lights-intensity");
+	### Uncomment and tune those to customize times ###
+	#navLights.fadeIn = 0.4; #fade in time 
+	#navLights.fadeOut = 0.4; #fade out time
+	#navLights.stayOn = 3 + rand()*0.05-0.025; #stable on period
+	#navLights.stayOff = 0.6; #stable off period
+	#navLights.turnOff = 0.12; #fade out time when turned off
+}
+
+
+### BEACON ###
+var beacon = nil;
+if(beaconSwitch!=nil) {
+	props.globals.initNode(beaconSwitch, 1, "BOOL");
+	beacon = aircraft.light.new(lightsPath~"beacon-state", 
+		[0.0, 1.0 + rand()*0.05-0.025], beaconSwitch);
+}
+	
+	
+### STROBE ###
+var strobe = nil;
+if(strobeSwitch!=nil) {
+	props.globals.initNode(strobeSwitch, 1, "BOOL");
+	strobe = aircraft.light.new(lightsPath~"strobe-state", 
+		[0.0, 0.87 + rand()*0.05-0.025], strobeSwitch);
+}
+
+
+### LIGHT FADING ###
+
+#class for controlling fade in/out behavior - propIn is a control property (handled as a boolean) and propOut is interpolated
+#all light brightness animations in xmls depend on propOut (Rembrandt brightness, material emission, flares transparency, ...)
+var lightFadeInOut = {
+	#constructor
+	new: func(propSwitch, propOut) {
+		m = { parents: [lightFadeInOut] };
+		m.fadeIn = 0.3; #some sane defaults
+		m.fadeOut = 0.4;
+		if(propSwitch==nil) {
+			m.listen = nil;
+			return m;
+		}
+		props.globals.initNode(propSwitch, 1, "BOOL");
+		m.isOn = getprop(propSwitch);
+		props.globals.initNode(propOut, m.isOn, "DOUBLE");
+		m.listen = setlistener(propSwitch, 
+			func {
+				if(m.isOn and !getprop(propSwitch)) {
+					interpolate(propOut, 0, m.fadeOut);
+					m.isOn = 0;
+				}
+				if(!m.isOn and getprop(propSwitch)) {
+					interpolate(propOut, 1, m.fadeIn);
+					m.isOn = 1;
+				}
+			}
+		);
+		return m;
+	},
+	#destructor
+	del: func {
+		if(me.listen!=nil) removelistener(me.listen);
+	},
+};
+
+fadeLanding = lightFadeInOut.new(landingSwitch, lightsPath~"landing-lights-intensity");
+fadeLanding = lightFadeInOut.new(searchSwitch, lightsPath~"search-lights-intensity");
+fadeTaxi = lightFadeInOut.new(taxiSwitch, lightsPath~"taxi-light-intensity");
+fadeProbe = lightFadeInOut.new(probeSwitch, lightsPath~"probe-light-intensity");
+fadeWhite = lightFadeInOut.new(whiteSwitch, lightsPath~"white-light-intensity");
+if(navStillOn) {
+	navLights = lightFadeInOut.new(navSwitch, lightsPath~"nav-lights-intensity");
+	navLights.fadeIn = 0.1;
+	navLights.fadeOut = 0.12;
+}
+#manipulate times if defaults don't fit your needs:
+#fadeLanding.fadeIn = 0.5;
+#fadeLanding.fadeOut = 0.8;
+
+
+### the rest of your model load embedded Nasal code ###
+
+    ]]>
+    </load>
+
+    <unload>
+      #prevent multiple timers and listeners from running and fighting on next connect
+      #cleanly destroy MP property mirroring
+      mirrorTimer.stop();
+      mirrorTimer = nil;
+      mirrorValues = nil;
+      
+      #cleanly destroy nav lights
+      if(navStillOn) {
+      	navLights.del();
+      }
+      else {
+      	if(navSwitch!=nil) setprop(navSwitch, 0);
+      	navLights.del();
+      	if(navSwitch!=nil) navLights.cycleTimer = nil;
+      	navLights = nil;
+      }
+      
+      #cleanly destroy beacon
+      if(beaconSwitch!=nil) setprop(beaconSwitch, 0);
+      beacon.del();
+      beacon = nil;
+      
+      #cleanly destroy strobe
+      if(strobeSwitch!=nil) setprop(strobeSwitch, 0);
+      strobe.del();
+      strobe = nil;
+      
+      #cleanly destroy light fade in/out animation objects
+      fadeLanding.del();
+      fadeTaxi.del();
+      fadeProbe.del();
+      fadeWhite.del();
+      
+      ### the rest of your model unload embedded Nasal code ###
+      livery_update.stop();
+      crew_door.unalias();
+      passenger_door.unalias();
+     
+    </unload>
+  </nasal>
+
+  <sound>
+    <path>Aircraft/R44/Sounds/raven-mp-sound.xml</path>
+  </sound>
+
+ 
+  
+ 
+<animation>
+    <type>material</type>
+    <object-name>ImatFuselageL1</object-name>
+    <object-name>ImatFuselageL2</object-name>
+    <object-name>ImatFuselageL3</object-name>
+    <object-name>ImatFuselageL4</object-name>
+    <object-name>ImatFuselageL5</object-name>
+    <object-name>ImatFuselageL6</object-name>
+    <object-name>ImatFuselageR1</object-name>
+    <object-name>ImatFuselageR2</object-name>
+    <object-name>ImatFuselageR3</object-name>
+    <object-name>ImatFuselageR4</object-name>
+    <object-name>ImatFuselageR5</object-name>
+    <object-name>ImatFuselageR6</object-name>
+    <object-name>ImatPanel1</object-name>
+    <object-name>ImatPanel2</object-name>
+    <object-name>ImatPanel3</object-name>
+    <object-name>ImatPanel4</object-name>
+    <object-name>ImatPanel5</object-name>
+    <object-name>ImatPanel6</object-name>
+
+    <property-base>sim/model/livery-font</property-base>
+    <texture-prop>texture</texture-prop>
+    <texture>immat.png</texture>
+  
+  </animation>
+  
+    <animation>
+    <type>material</type>
+    <object-name>fuselage</object-name>
+    <object-name>patins</object-name>
+    <object-name>supportlampe</object-name>
+    <object-name>protection</object-name>
+    <object-name>porteAG</object-name>
+    <object-name>porteAD</object-name>
+    <object-name>porteBG</object-name>
+    <object-name>porteBD</object-name>
+    <object-name>pate</object-name>
+    <object-name>derive</object-name>
+    <object-name>lights</object-name>
+
+    <object-name>trous</object-name>
+    <object-name>echappe</object-name>
+
+    <property-base>sim/model/livery</property-base>
+    <texture-prop>texture</texture-prop>
+    <texture>texture.png</texture>
+    
+  </animation>
+  
+  
+  <animation>
+		<type>material</type>
+
+		<object-name>fuselage</object-name>
+		<object-name>fuselage1</object-name>
+		<object-name>fuselage2</object-name>
+		<object-name>fuselage3</object-name>
+		<object-name>fuselage4</object-name>
+		<object-name>fuselage5</object-name>
+		<object-name>fuselage6</object-name>
+		<object-name>fuselage7</object-name>
+		<object-name>fuselage8</object-name>
+		<object-name>fuselage9</object-name>
+		<object-name>light</object-name>
+		<object-name>light2</object-name>
+		<object-name>light3</object-name>
+		<object-name>light4</object-name>
+		<object-name>cylinder</object-name>
+		<object-name>verrelampe</object-name>
+
+		<property-base>sim/model/livery</property-base>
+		<texture-prop>texture</texture-prop>
+		<texture>texture.png</texture>
+
+	</animation>
+
+  
+  
+    <!-- Immatriculatoin -->
+  <model>
+  <name>imat</name>
+    <path>Aircraft/R44/Models/Immat/immat.xml</path>
+  </model>
+  
+  <animation>
+  <type>select</type>
+  <object-name>imat</object-name>
+		
+  <condition>
+  <not>
+   <equals>
+    <property>sim/model/livery/name</property>
+    <value>FGUK</value>
+   </equals>
+  </not>
+  </condition>
+ </animation>
+  
+   <!-- Intérieur -->
+  <model>
+    <name>Interieur</name>
+    <path>Aircraft/R44/Models/Interior/interior.xml</path>
+  </model>
+  
+
+
+  <!-- For Rembrandt -->
+  <animation>
+    <type>noshadow</type>
+    <object-name>Interieur</object-name>
+  </animation>
+
+  <!-- Rotor principale -->
+  <model>
+    <path>Aircraft/R44/Models/MainRotor/mainrotor.xml</path>
+    <offsets>
+      <x-m> -2.218 </x-m>
+      <y-m>  0.000 </y-m>
+      <z-m>  1.410 </z-m>
+    </offsets>
+  </model>
+
+  <!-- Rotor de queue -->
+  <model>
+    <path>Aircraft/R44/Models/TailRotor/tailrotor.xml</path>
+    <offsets>
+      <x-m>  3.609 </x-m>
+      <y-m> -0.247 </y-m>
+      <z-m>  0.395 </z-m>
+      <roll-deg>   90 </roll-deg>
+    </offsets>
+  </model>
+
+  <!-- TV Camera 
+
+  <model>
+    <name>TVCam</name>
+    <path>Aircraft/R44/Models/TVcam.xml</path>
+  </model>
+  -->
+
+  <!-- Lights -->
+  	<model>
+       
+        <path>Aircraft/R44/Models/Lights/LightPack.xml</path>
+        <offsets>
+            <x-m>0</x-m>
+            <y-m>0</y-m>
+            <z-m>0</z-m>
+            <pitch-deg>0</pitch-deg>
+        </offsets>
+    </model>
+   
+
+    
+   
+ 
+ 
+  <!-- Ouverture/fermeture des portes -->
+  <animation>
+    <name>PorteAvantGauche</name>
+    <object-name>porteAG</object-name>
+    <object-name>windowFR</object-name>
+  </animation>
+
+  <animation>
+    <name>PorteAvantDroite</name>
+    <object-name>porteAD</object-name>
+    <object-name>windowFL</object-name>
+  </animation>
+
+  <animation>
+    <name>PorteArriereGauche</name>
+    <object-name>porteBG</object-name>
+    <object-name>windowRR</object-name>
+  </animation>
+
+  <animation>
+    <name>PorteArriereDroite</name>
+    <object-name>porteBD</object-name>
+    <object-name>windowRL</object-name>
+  </animation>
+
+  <!-- Porte avant gauche -->
+  <animation>
+    <type>pick</type>
+    <object-name>PorteAvantGauche</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>nasal</command>
+        <script>doors.doorsystem.Lcrewexport();</script>
+      </binding>
+    </action>
+  </animation>
+
+  <animation>
+    <type>rotate</type>
+    <object-name>PorteAvantGauche</object-name>
+    <property>instrumentation/doors/Lcrew/position-norm</property>
+    <factor> -80 </factor>
+    <axis>
+      <x1-m> -3.795 </x1-m>
+      <y1-m> -0.607 </y1-m>
+      <z1-m> -0.603 </z1-m>
+      <x2-m> -3.631 </x2-m>
+      <y2-m> -0.625 </y2-m>
+      <z2-m> -0.266 </z2-m>
+    </axis>
+  </animation>
+
+  <!-- Porte avant droite -->
+  <animation>
+    <type>pick</type>
+    <object-name>PorteAvantDroite</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>nasal</command>
+        <script>doors.doorsystem.Rcrewexport();</script>
+      </binding>
+    </action>
+  </animation>
+
+  <animation>
+    <type>rotate</type>
+    <object-name>PorteAvantDroite</object-name>
+    <property>instrumentation/doors/Rcrew/position-norm</property>
+    <factor> 80 </factor>
+    <axis>
+      <x1-m> -3.795 </x1-m>
+      <y1-m>  0.607 </y1-m>
+      <z1-m> -0.603 </z1-m>
+      <x2-m> -3.631 </x2-m>
+      <y2-m>  0.625 </y2-m>
+      <z2-m> -0.266 </z2-m>
+    </axis>
+  </animation>
+
+  <!-- Porte arriere gauche -->
+  <animation>
+    <type>pick</type>
+    <object-name>PorteArriereGauche</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>nasal</command>
+        <script>doors.doorsystem.Lpassengerexport();</script>
+      </binding>
+    </action>
+  </animation>
+
+  <animation>
+    <type>rotate</type>
+    <object-name>PorteArriereGauche</object-name>
+    <property>instrumentation/doors/Lpassenger/position-norm</property>
+    <factor> -80 </factor>
+    <axis>
+      <x1-m> -3.181 </x1-m>
+      <y1-m> -0.646 </y1-m>
+      <z1-m> -0.726 </z1-m>
+      <x2-m> -3.046 </x2-m>
+      <y2-m> -0.666 </y2-m>
+      <z2-m> -0.346 </z2-m>
+    </axis>
+  </animation>
+
+  <!-- Porte arriere droite -->
+  <animation>
+    <type>pick</type>
+    <object-name>PorteArriereDroite</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>nasal</command>
+        <script>doors.doorsystem.Rpassengerexport();</script>
+      </binding>
+    </action>
+  </animation>
+
+  <animation>
+    <type>rotate</type>
+    <object-name>PorteArriereDroite</object-name>
+    <property>instrumentation/doors/Rpassenger/position-norm</property>
+    <factor> 80 </factor>
+    <axis>
+      <x1-m> -3.181 </x1-m>
+      <y1-m>  0.646 </y1-m>
+      <z1-m> -0.726 </z1-m>
+      <x2-m> -3.046 </x2-m>
+      <y2-m>  0.666 </y2-m>
+      <z2-m> -0.346 </z2-m>
+    </axis>
+  </animation>
+
+  
+ <model>
+  <path>Aircraft/R44/Models/Effects/particle/rotor_particle.xml</path>
+  <offsets>
+    <x-m>-6 </x-m>
+    <y-m> 0 </y-m>
+    <z-m> 0 </z-m>
+  </offsets>
+</model>
+
+ 
+
+  
+
+
+  <model>
+    <path>Aircraft/R44/Models/HelicopterPushback/HelicopterPushback.xml</path>
+  </model>
+
+  <animation>
+    <type>pick</type>
+    <object-name>RemoveRRDoor</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>property-toggle</command>
+        <property>sim/model/r44/remove-door-rr</property>
+      </binding>
+    </action>
+  </animation>
+  <animation>
+    <type>pick</type>
+    <object-name>RemoveRFDoor</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>property-toggle</command>
+        <property>sim/model/r44/remove-door-rf</property>
+      </binding>
+    </action>
+  </animation>
+  <animation>
+    <type>pick</type>
+    <object-name>RemoveLRDoor</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>property-toggle</command>
+        <property>sim/model/r44/remove-door-lr</property>
+      </binding>
+    </action>
+  </animation>
+  <animation>
+    <type>pick</type>
+    <object-name>RemoveLFDoor</object-name>
+    <action>
+      <button>0</button>
+      <repeatable>false</repeatable>  
+      <binding>
+        <command>property-toggle</command>
+        <property>sim/model/r44/remove-door-lf</property>
+      </binding>
+    </action>
+  </animation>
+
+  <animation>
+    <type>select</type>
+    <object-name>porteBD</object-name>
+    <object-name>windowRL</object-name>
+    <object-name>intporteBD</object-name>
+    <object-name>intvitreBD</object-name>
+    <condition>
+      <not>
+        <property>sim/model/r44/remove-door-rr</property>
+      </not>
+    </condition>
+  </animation>
+  <animation>
+    <type>select</type>
+    <object-name>porteAD</object-name>
+    <object-name>windowFL</object-name>
+    <object-name>intporteAD</object-name>
+    <object-name>intvitreAD</object-name>
+    <condition>
+      <not>
+        <property>sim/model/r44/remove-door-rf</property>
+      </not>
+    </condition>
+  </animation>
+  <animation>
+    <type>select</type>
+    <object-name>porteBG</object-name>
+    <object-name>windowRR</object-name>
+    <object-name>intporteBG</object-name>
+    <object-name>intvitreBG</object-name>
+    <condition>
+      <not>
+        <property>sim/model/r44/remove-door-lr</property>
+      </not>
+    </condition>
+  </animation>
+  <animation>
+    <type>select</type>
+    <object-name>porteAG</object-name>
+    <object-name>windowFR</object-name>
+    <object-name>intporteAG</object-name>
+    <object-name>intvitreAG</object-name>
+    <condition>
+      <not>
+        <property>sim/model/r44/remove-door-lf</property>
+      </not>
+    </condition>
+  </animation>
+  
+  
+</PropertyList>
+

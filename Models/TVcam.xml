@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+
+	<path>TVcam.ac</path>
+
+	
+	<animation>
+		<object-name>fuselage2</object-name>
+		<object-name>fuselage3</object-name>
+		<object-name>fuselage6</object-name>
+		<object-name>disk2</object-name>
+		<object-name>disk2</object-name>
+		<object-name>fuselage1</object-name>
+		<object-name>fuselage4</object-name>
+		<type>select</type>
+		<condition>
+			<property>sim/model/R44/tv</property>
+		</condition>
+	</animation>
+
+
+</PropertyList>
+

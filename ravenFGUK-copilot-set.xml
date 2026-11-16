@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList include="ravenFGUK-copilot-cnf.xml">
+
+  <sim>
+
+    <description>Robinson R44 Raven II (copilot) FGUK</description>
+    <author>BARANGER Emmanuel (3D), AUBERGER Jean Michel (FDM), BACON Guillaume (Sounds and Simulation Config), DE L'HAMAIDE Clément (Dual Control)</author>
+   
+     <previews>
+      <preview>
+        <type>exterior</type>
+        <splash type="bool">true</splash>
+        <path>Splashs/Scene 1 2025-03-29_12-27-56.jpg</path>
+      </preview>
+      <preview>
+        <type>exterior</type>
+        <splash type="bool">true</splash>
+        <path>Splashs/Scene 1 2025-03-29_12-57-57.jpg</path>
+      </preview>
+      <preview>
+        <type>interior</type>
+        <splash type="bool">true</splash>
+        <path>Splashs/Scene 1 2025-03-29_12-57-17.jpg</path>
+      </preview>
+      <preview>
+        <type>exterior</type>
+        <splash type="bool">true</splash>
+        <path>Splashs/Scene 1 2025-03-29_12-56-37.jpg</path>
+      </preview>
+	   <preview>
+        <type>exterior</type>
+        <splash type="bool">true</splash>
+        <path>Splashs/Scene 1 2025-03-29_12-30-10.jpg</path>
+      </preview>
+    </previews>
+	
+	<rendering>
+    <refl_correction type="string">-0.25</refl_correction>
+    </rendering>
+  </sim>
+
+</PropertyList>

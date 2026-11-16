@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+  
+  <sim>
+    
+    <model>      
+      <livery>
+        <name type="string">Helitaxi</name>
+        <texture>Liveries/helitaxi.png</texture>
+      
+      </livery>
+      <livery-font>
+        <name type="string">Green</name>
+        <texture>Liveries/Disabled.png</texture>
+      
+      </livery-font>
+	 
+   <r44>
+        
+	   <hdr>true</hdr>
+		<als>false</als>
+	
+      </r44>
+    </model>
+       <rendering>
+    <refl_correction type="string">-0.22</refl_correction>
+    </rendering>
+  </sim>
+
+</PropertyList>

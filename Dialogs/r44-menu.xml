@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+
+  <default>
+    <menu n="10">
+      <label>Robinson R44</label>
+      <enabled type="bool">true</enabled>
+      <item>
+        <label>Autostart</label>
+        <binding>
+          <command>property-toggle</command>
+          <property>sim/model/start-idling</property>
+        </binding>
+      </item>
+      <item>
+        <label>Equipment</label>
+        <binding>
+            <command>nasal</command>
+            <script>r44.equipment_dialog.toggle()</script>
+        </binding>
+        </item>
+      <item>
+        <label>Select Livery</label>
+        <binding>
+          <command>nasal</command>
+          <script>aircraft.livery.dialog.toggle()</script>
+        </binding>
+      </item>
+      <item>
+        <label>Blades visible</label>
+        <binding>
+          <command>nasal</command>
+          <script>
+            var p = "rotors/main/bladesvisible";
+            setprop(p, var i = !getprop(p));
+            gui.popupTip("Blades visible " ~ (i ? "On" : "Off"));
+          </script>
+        </binding>
+      </item>
+      <item>
+        <label>Pilot/copilot visible</label>
+        <binding>
+          <command>nasal</command>
+          <script>
+            var p = "/sim/model/r44/pilot-visible";
+            setprop(p, var i = !getprop(p));
+            var a = "/sim/model/r44/copilot-visible";
+            setprop(a, var i = !getprop(a));
+            gui.popupTip("pilots visible " ~ (i ? "On" : "Off"));
+          </script>
+        </binding>
+      </item>
+      <item>
+        <label>Immatriculation</label>
+        <binding>
+          <command>nasal</command>
+          <script>r44.immat_dialog.toggle()</script>
+        </binding>
+      </item>
+      <item>
+        <label>Select MP-copilot</label>
+        <binding>
+          <command>nasal</command>
+          <script>
+           dual_control_tools.copilot_dialog.show(aircraft_dual_control.copilot_type);
+         </script>
+       </binding>
+     </item>
+     <item>
+       <label>Pushback</label>
+       <name>pushback</name>
+       <binding>
+        <command>nasal</command>
+        <script>var push_dlg = gui.Dialog.new("sim/gui/dialogs/pushback/dialog", "Aircraft/R44/Models/HelicopterPushback/dialog/helicopter_pushback.xml"); push_dlg.open();</script>
+      </binding>
+    </item>
+	<item>
+        <label>Toggle HDR  panel lighting (  Use in HDR only ! )</label>
+        <binding>
+          <command>property-toggle</command>
+          <property>controls/electric/directbat-switch</property>
+        </binding>
+      </item>
+  </menu>
+</default>
+
+</PropertyList>
+

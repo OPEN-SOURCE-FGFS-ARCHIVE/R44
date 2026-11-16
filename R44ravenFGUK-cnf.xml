@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList include="r44baseFGUK.xml">
+
+  <sim>
+    <description>Robinson R44 Raven II (YASim) FGUK</description>
+    
+    <flight-model archive="y">yasim</flight-model>
+    <aero archive="y">ravenFGUK</aero>
+
+
+
+    <sound>
+      <path>Aircraft/R44/Sounds/raven-sound.xml</path>
+    </sound>
+
+    <model>
+      <path archive="y">Aircraft/R44/Models/Robinson_R44-Raven.xml</path>
+      <livery>
+        <file type="string">FGUK</file>
+      </livery>
+      <r44>
+        <state type="int">0</state>
+        <engine type="float">0.0</engine>
+        <rotor-step-deg type="float">-1.0</rotor-step-deg>
+		  <!--  For switching between shiny and non shiny paint in HDR mode -->
+			 <hdr>true</hdr>
+				<als>false</als>
+				<!-- -->
+      </r44>
+    </model>
+  </sim>
+
+  <!-- ############################### -->
+  <!-- ######## DUAL CONTROL ######### -->
+  <nasal>
+    <dual_control_tools>
+      <file>Aircraft/R44/Nasal/dual-control-tools.nas</file>
+    </dual_control_tools>
+    <aircraft_dual_control>
+      <file>Aircraft/R44/Nasal/44-dual-control.nas</file>
+    </aircraft_dual_control>
+    <dual_control>
+      <file>Aircraft/R44/Nasal/pilot-dual-control.nas</file>
+    </dual_control>
+  </nasal>
+  <!-- ######## DUAL CONTROL ######### -->
+  <!-- ############################### -->
+
+</PropertyList>

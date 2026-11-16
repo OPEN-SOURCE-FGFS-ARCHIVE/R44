@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+
+  <sim>
+
+    <model>
+      <livery>
+        <name type="string">N7183C</name>
+        <texture>Liveries/2048x2048/N7183C.png</texture>
+        <specular>
+          <red>   0.03 </red>
+          <green> 0.03 </green>
+          <blue>  0.03 </blue>
+        </specular>
+      </livery>
+      <livery-font>
+        <texture>Liveries/Fontes/Disabled.png</texture>
+        <specular>
+          <red>   0.03 </red>
+          <green> 0.03 </green>
+          <blue>  0.03 </blue>
+        </specular>
+      </livery-font>
+      <r44>
+        <tv type="bool">false</tv>
+      </r44>
+    </model>
+
+  </sim>
+
+</PropertyList>

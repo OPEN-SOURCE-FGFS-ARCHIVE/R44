@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+
+  <sim>
+
+    <model>
+      <livery>
+        <name type="string">PMSP</name>
+        <texture>Liveries/PM.png</texture>
+        <specular>
+          <red>   0.3 </red>
+          <green> 0.3 </green>
+          <blue>  0.3 </blue>
+        </specular>
+      </livery>
+      <livery-cam>
+        <texture>Liveries/1024x1024/PM.png</texture>
+       
+      </livery-cam>
+      <livery-font>
+        <texture>Liveries/Fontes/Disabled.png</texture>
+        
+      </livery-font>
+      <r44>
+        <tv type="bool">false</tv>
+      </r44>
+    </model>
+<rendering>
+    <refl_correction type="string">-0.22</refl_correction>
+    </rendering>
+  </sim>
+
+</PropertyList>

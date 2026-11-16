@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<PropertyList>
+
+  <sim include="Nasal/views.xml">
+
+    <author>BARANGER Emmanuel (3D), AUBERGER Jean Michel, Stuart C (FDM), BACON Guillaume (Sounds and Simulation Config) StuartC (Splash), paju1986 (improved cockpit and systems) </author>
+   <aircraft-version>1.0 HDR</aircraft-version>
+    <status>FGUK 1.0 HDR</status>
+
+    <fuel-fraction>1</fuel-fraction>
+
+        <instrumentation>
+
+			<path>Aircraft/R44/System/instruments.xml</path>
+		</instrumentation>
+		 
+		 
+		 <systems>
+ <autopilot> 
+	   
+    <fdm>
+      <max-pitch>15</max-pitch>
+     
+      <max-speed>110</max-speed>
+      <min-speed>30</min-speed>
+     
+    </fdm>
+    
+  
+  
+    <speed>
+    <enabled>true</enabled>
+    <target>110</target>
+    <mode>pitch-control</mode>
+    <pitch-control>
+      <gain>8</gain>
+    </pitch-control>
+  </speed>
+  
+ 
+    <fly-by-wire>
+      <enabled>true</enabled>
+      <mode>normal</mode>
+    </fly-by-wire>
+	
+	
+  </autopilot>
+  
+  <autopilot n="101">
+	  
+	   <path>Aircraft/R44/System/r44-autopilot.xml</path>
+      </autopilot>
+
+       <autopilot n="102">
+        <path>Aircraft/R44/System/glass-rain.xml</path>
+        </autopilot>
+		
+		<autopilot n="103">
+                <path>Aircraft/R44/System/sound-blade-vortex-interaction.xml</path>
+            </autopilot>
+    </systems>
+
+
+    <weight n="0">
+      <name>Pilot</name>
+      <weight-lb>180</weight-lb>
+      <max-lb>300</max-lb>
+    </weight>
+
+    <weight n="1">
+      <name>Co-Pilot</name>
+      <weight-lb>180</weight-lb>
+      <max-lb>300</max-lb>
+    </weight>
+
+    <weight n="2">
+      <name>Right Passenger</name>
+      <weight-lb>0</weight-lb>
+      <max-lb>300</max-lb>
+    </weight>
+
+    <weight n="3">
+      <name>Left Passenger</name>
+      <weight-lb>0</weight-lb>
+      <max-lb>300</max-lb>
+    </weight>
+
+    <weight n="4">
+      <name>Load</name>
+      <weight-lb>0</weight-lb>
+      <max-lb>800</max-lb>
+    </weight>
+
+    <help>
+      <title>R44 - background and help</title>
+      <line></line>
+      <key>
+        <name>{</name>
+        <desc>Start engines</desc>
+      </key>
+      <key>
+        <name>}</name>
+        <desc>Shutdown engines</desc>
+      </key>
+      <key>
+        <name>d</name>
+        <desc>Close pilot door</desc>
+      </key>
+      <key>
+        <name>R</name>
+        <desc>Toggle rotor brake</desc>
+      </key>
+      <key>
+        <name>r</name>
+        <desc>Apply rotor brake</desc>
+      </key>
+	  <line></line>
+	  <line> FGUK Edition specific help </line>
+<line> SAR Menu option - THIS IS JUST A FUN MULTIPLAYER FEATURE !!</line>
+			<line> If you crash your chopper, you can use this menu option to call on another R44</line>
+			<line>or any other chopper running the script, to retrieve your broken chopper and you, as an underslung load.</line>
+<line> </line>
+ 
+ <line>If you are using HDR, then you need to enable the specific HDR panel lights from the R44 Menu.</line>
+ <line>Using the HDR panel lights while not in HDR will produce very strange results.</line>
+<line> </line>
+<line>AUTOPILOT V3 </line>
+<line>The Autopilot is now able to control  speed, altitude and heading. Autopilot is only usable  between 30-140kts</line>
+<line>Heading modes can be used without any other Autopilot function being active.</line>
+<line>Speed modes can be used without any other Autopilot function being active.</line>
+<line>****  Altitude modes can only be used in conjunction with speed mode being being active. This includes the use of Vertical Speed mode.  ***</line>
+<line>AUTOPILOT ISSUES !!!!!</line>
+<line>When disengaging the AP entirely or from a singe mode, the  control inputs will snap to your actual cyclic/colective/pedal positions as soon as you  move any of them.</line>
+<line>This is unavoidable as  the sim can not physically move your cyclic/colective/pedal positions to match the Autopilots input.</line>
+<line>The best advice to minimise the sudden change of input would be for you to  have your cyclic/colective/pedal positions ready in approximatly correct positions  to minimise the "snap".</line>
+
+
+    </help>
+
+    <menubar include="Dialogs/r44-menu.xml"/>
+
+    <!-- ############################### -->
+    <!-- ######## DUAL CONTROL ######### -->
+    <remote>
+      <pilot-callsign type="string"></pilot-callsign>
+    </remote>
+
+    <multiplay>
+     <generic>
+	 <int n="0" alias="/controls/switches/nav-lights-switch" />
+      <!-- Beacon on -->
+      <int n="1" alias="/controls/switches/beacon-switch" />
+      <!-- Landing lights on -->
+      <int n="2" alias="/controls/switches/landing-lights-switch" />
+	    <!-- Taxi light on -->
+      <int n="3" alias="/controls/switches/strobe-switch" />
+	  <int n="6" alias="/gear/gear/ground-is-solid"/><!-- rotor particles -->
+      <!-- Crashed -->
+      <int n="7" alias="/sim/crashed" />
+		 <!-- search light on -->
+      <int n="8" alias="/controls/switches/search-lights-switch" />
+
+
+
+       <float n="2" alias="/position/gear-agl-m">  0 </float>                <!-- 11 altitude for MP shadow and smoke -->
+       <float n="5" alias="/controls/flight/rudder"/>
+       <float n="6" alias="/controls/flight/elevator"/>
+       <float n="7" alias="/controls/flight/aileron"/>
+       <float n="8" alias="/controls/engines/engine/throttle"/>
+
+	   <float n="10" alias="/orientation/pitch-deg"/>	<!-- rotor particles -->
+	   <float n="11" alias="/position/gear-agl-m"/>	<!-- rotor particles -->
+	   <float n="12" alias="/orientation/roll-deg"/><!-- rotor particles -->
+	    <float n="9" alias="/rotors/main/torque"/>	<!-- rotor particles -->
+
+     </generic>
+   </multiplay>
+   <!-- ######## DUAL CONTROL ######### -->
+   <!-- ############################### -->
+
+   <aircraft-data>
+     <path>/sim/model/r44/FOYoke-visible</path>
+     <path>/sim/model/r44/pilot-visible</path>
+     <path>/sim/model/r44/copilot-visible</path>
+     <path>/rotors/main/bladesvisible</path>
+     <path>/sim/model/r44/cluthLight</path>
+   </aircraft-data>
+
+ </sim>
+
+ <controls>
+  <engines>
+    <engine n="0">
+      <magnetos>0</magnetos>
+      <throttle>1.0</throttle>
+      <clutch type="bool">0</clutch>
+      <clutchguard type="bool">0</clutchguard>
+    </engine>
+  </engines>
+  <gear>
+    <brake-parking>1</brake-parking>
+  </gear>
+  <rotor>
+    <engine-throttle type="double">1.0</engine-throttle>
+    <brake>0</brake>
+    <reltarget>1</reltarget>
+    <maxreltorque>1</maxreltorque>
+  </rotor>
+  <flight>
+    <aileron-trim>0</aileron-trim>
+    <elevator-trim>0</elevator-trim>
+  </flight>
+
+
+</controls>
+
+<engines>
+  <engine>
+    <rpm type="double">0</rpm>
+    <running type="bool">false</running>
+    <clutch-engaged type="bool">false</clutch-engaged>
+  </engine>
+</engines>
+
+<rotors>
+  <main>
+    <rpm type="double">0</rpm>
+    <cone-deg type="double">0</cone-deg>
+    <cone1-deg type="double">0</cone1-deg>
+    <cone2-deg type="double">0</cone2-deg>
+    <cone3-deg type="double">0</cone3-deg>
+    <cone4-deg type="double">0</cone4-deg>
+  </main>
+</rotors>
+
+<instrumentation>
+  <gsdi>
+    <serviceable type="bool">true</serviceable>
+    <enabled type="bool">true</enabled>
+  </gsdi>
+</instrumentation>
+
+<input>
+  <keyboard include="Nasal/r44-keyboard.xml"/>
+</input>
+
+<rotors>
+  <main>
+    <rpm type="double">0</rpm>
+    <cone-deg type="double">0</cone-deg>
+    <cone1-deg type="double">0</cone1-deg>
+    <cone2-deg type="double">0</cone2-deg>
+    <cone3-deg type="double">0</cone3-deg>
+    <cone4-deg type="double">0</cone4-deg>
+  </main>
+</rotors>
+
+<nasal>
+
+<rotorwash>
+	<file>Aircraft/R44/Nasal/rotorwash.nas</file>
+	</rotorwash>
+
+<sar_service>
+			<file>Aircraft/R44/Nasal/recovery.nas</file>
+		</sar_service>
+		<lights>
+      <file>Aircraft/R44/Nasal/Lights.nas</file>
+    </lights>
+  <doors>
+    <file>Aircraft/R44/Nasal/doors.nas</file>
+  </doors>
+  <r44>
+   
+    <file>Aircraft/R44/Nasal/immat.nas</file>
+    <file>Aircraft/R44/Nasal/equipment.nas</file>
+   
+    <file>Aircraft/R44/Nasal/r44.nas</file>
+    <file>Aircraft/R44/Nasal/rotoranimation.nas</file>
+    <file>Aircraft/R44/Nasal/electrical.nas</file>
+    <file>Aircraft/R44/Nasal/FGUKliveries.nas</file>
+    <file>Aircraft/R44/Nasal/bladevisible.nas</file>
+    <file>Aircraft/R44/Models/Interior/Panel/Instruments/RenanGPSMap/GPS.nas</file>
+  </r44>
+  <kx165a>
+    <file>Aircraft/R44/Nasal/kx165a.nas</file>
+  </kx165a>
+  <gtx327>
+  <file>Aircraft/R44/Nasal/gtx-327.nas</file>
+  </gtx327>
+
+</nasal>
+
+</PropertyList>
